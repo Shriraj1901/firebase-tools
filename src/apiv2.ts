@@ -144,7 +144,13 @@ export async function getAccessToken(): Promise<string> {
   }
 
   const data = await auth.getAccessToken(refreshToken, []);
-  return data.access_token;
+  // With Application Default Credentials there are no stored OAuth tokens to hand back. Refreshing the auth
+  // stores the new access token through setAccessToken instead.
+  const token = data?.access_token || accessToken;
+  if (!token) {
+    throw new FirebaseError("Unable to refresh the access token.", { exit: 1 });
+  }
+  return token;
 }
 
 function proxyURIFromEnv(): string | undefined {

@@ -6,7 +6,7 @@ import * as auth from "./auth";
 import nock from "./test/helpers/nock";
 const proxySetup = require("proxy");
 
-import { Client, CLI_OAUTH_PROJECT_NUMBER } from "./apiv2";
+import { Client, CLI_OAUTH_PROJECT_NUMBER, getAccessToken, setAccessToken } from "./apiv2";
 import { FirebaseError } from "./error";
 import { streamToString, stringToStream } from "./utils";
 
@@ -32,6 +32,39 @@ describe("apiv2", () => {
 
   after(() => {
     delete require.cache[require.resolve("./apiv2")];
+  });
+
+  describe("getAccessToken", () => {
+    let original: typeof auth.getAccessToken;
+    beforeEach(() => {
+      original = auth.getAccessToken;
+    });
+    afterEach(() => {
+      (auth as any).getAccessToken = original;
+      setAccessToken();
+    });
+
+    it("should use the token stored while refreshing Application Default Credentials", async () => {
+      // With ADC the refresh goes through requireAuth, which stores the new token with
+      // setAccessToken and has no OAuth tokens to return.
+      (auth as any).getAccessToken = async () => {
+        setAccessToken("refreshed");
+        return undefined;
+      };
+
+      setAccessToken();
+      await expect(getAccessToken()).to.eventually.equal("refreshed");
+    });
+
+    it("should throw a FirebaseError if refreshing does not produce a token", async () => {
+      (auth as any).getAccessToken = async () => undefined;
+
+      setAccessToken();
+      await expect(getAccessToken()).to.eventually.be.rejectedWith(
+        FirebaseError,
+        "Unable to refresh the access token.",
+      );
+    });
   });
 
   describe("request", () => {
