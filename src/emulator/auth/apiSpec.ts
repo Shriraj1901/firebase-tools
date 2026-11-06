@@ -5487,6 +5487,7 @@ export default {
             description:
               "The user's new display name to be updated in the account's attributes. The length of the display name must be less than or equal to 256 characters.",
             type: "string",
+            nullable: true,
           },
           email: {
             description:
@@ -5536,6 +5537,7 @@ export default {
             description:
               "The user's new photo URL for the account's profile photo to be updated in the account's attributes. The length of the URL must be less than or equal to 2048 characters.",
             type: "string",
+            nullable: true,
           },
           provider: {
             description: "The Identity Providers that the account should be associated with.",

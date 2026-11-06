@@ -53,6 +53,31 @@ describeAuthEmulator("accounts:update", ({ authApi, getClock }) => {
       });
   });
 
+  it("should leave displayName and photoUrl unchanged when they are null", async () => {
+    const { idToken } = await registerAnonUser(authApi());
+
+    const attrs = { displayName: "Alice", photoUrl: "http://localhost/alice.png" };
+    await authApi()
+      .post("/identitytoolkit.googleapis.com/v1/accounts:update")
+      .query({ key: "fake-api-key" })
+      .send({ idToken, ...attrs })
+      .then((res) => expectStatusCode(200, res));
+
+    await authApi()
+      .post("/identitytoolkit.googleapis.com/v1/accounts:update")
+      .query({ key: "fake-api-key" })
+      .send({ idToken, displayName: null, photoUrl: null })
+      .then((res) => {
+        expectStatusCode(200, res);
+        expect(res.body.displayName).equals(attrs.displayName);
+        expect(res.body.photoUrl).equals(attrs.photoUrl);
+      });
+
+    const info = await getAccountInfoByIdToken(authApi(), idToken);
+    expect(info.displayName).equals(attrs.displayName);
+    expect(info.photoUrl).equals(attrs.photoUrl);
+  });
+
   it("should set password and issue new tokens", async () => {
     const user = { email: "alice@example.com", password: "notasecret" };
     const { localId, idToken } = await registerUser(authApi(), user);
